@@ -33,6 +33,8 @@ public class ClientMain {
 	private PrintWriter writer;
 	private JTextArea incoming;
 	private JTextField outgoing;
+	private JFrame frame;
+	private JFrame logframe;
 
 	public static void main(String[] args) {
 		try {
@@ -63,6 +65,16 @@ public class ClientMain {
 		class IncomingReader implements Runnable {
 			public void run() {
 				String message;
+				String chk;
+				try {
+					do {
+						chk = reader.readLine();
+					} while (chk.equals("F"));
+					logframe.setVisible(false);
+					frame.setLocation(logframe.getX(), logframe.getY());
+					frame.setVisible(true);
+				} catch (IOException e1) {
+				}
 				try {
 					while ((message = reader.readLine()) != null) {
 						incoming.append(message + "\n");
@@ -74,8 +86,8 @@ public class ClientMain {
 		}
 
 		private void initView() {
-			JFrame frame = new JFrame("Chat Client");
-			JFrame logframe = new JFrame("Login");
+			frame = new JFrame("Chat Client");
+			logframe = new JFrame("Login");
 			frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			JPanel mainPanel = new JPanel();
 			JPanel logPanel = new JPanel();
@@ -103,13 +115,11 @@ public class ClientMain {
 				public void actionPerformed(ActionEvent e) {
 					writer.println(username.getText());
 					writer.flush();
-					logframe.setVisible(false);
-					frame.setVisible(true);
 				}
 			});
 			mainPanel.add(qScroller);
-			mainPanel.add(sendButton);
 			mainPanel.add(outgoing);
+			mainPanel.add(sendButton);
 			logPanel.add(username);
 			logPanel.add(logButton);
 			frame.getContentPane().add(BorderLayout.CENTER, mainPanel);

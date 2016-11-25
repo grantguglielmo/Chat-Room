@@ -15,10 +15,10 @@ import java.awt.BorderLayout;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Observable;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -26,9 +26,9 @@ import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.WindowConstants;
 
-public class ServerMain {
+public class ServerMain extends Observable {
 
-	private ArrayList<PrintWriter> clientOutputStreams;
+	private ArrayList<String> users;
 	private JTextArea output;
 
 	public static void main(String[] args) {
@@ -46,6 +46,7 @@ public class ServerMain {
 	}
 
 	public void serverInit() {
+		users = new ArrayList<String>();
 		JFrame frame = new JFrame("Server");
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		JPanel mainPanel = new JPanel();
@@ -63,23 +64,27 @@ public class ServerMain {
 	}
 
 	private void setUpNetworking() throws IOException {
-		clientOutputStreams = new ArrayList<PrintWriter>();
 		@SuppressWarnings("resource")
 		ServerSocket serverSock = new ServerSocket(8000);
 		while (true) {
 			Socket clientSocket = serverSock.accept();
-			PrintWriter writer = new PrintWriter(clientSocket.getOutputStream());
-			Thread t = new Thread(new ClientHandler(clientSocket));
+			ClientObserver writer = new ClientObserver(clientSocket.getOutputStream());
+			String IP = clientSocket.getRemoteSocketAddress().toString();
+			IP = IP.substring(1);
+			Thread t = new Thread(new ClientHandler(clientSocket, writer, IP));
 			t.start();
-			clientOutputStreams.add(writer);
-			output.append("got a connection\n");
+			output.append("got a connection to: " + IP + "\n");
 		}
 	}
 
 	class ClientHandler implements Runnable {
 		private BufferedReader reader;
+		private ClientObserver writer;
+		private String IP;
 
-		public ClientHandler(Socket clientSocket) throws IOException {
+		public ClientHandler(Socket clientSocket, ClientObserver w, String address) throws IOException {
+			IP = address;
+			writer = w;
 			Socket sock = clientSocket;
 			reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 		}
@@ -89,22 +94,25 @@ public class ServerMain {
 			String user;
 			try {
 				user = reader.readLine();
-				output.append(user + " has connected \n");
+				while (users.contains(user)) {
+					writer.println("F");
+					writer.flush();
+					user = reader.readLine();
+				}
+				users.add(user);
+				writer.println("K");
+				writer.flush();
+				output.append(user + " has connected from: " + IP + "\n");
 				user += ": ";
+				addObserver(writer);
 				while ((message = reader.readLine()) != null) {
 					output.append(user + message + "\n");
-					notifyClients(user + message);
+					setChanged();
+					notifyObservers(user + message);
 				}
 			} catch (IOException e) {
 
 			}
-		}
-	}
-
-	private void notifyClients(String message) {
-		for (PrintWriter writer : clientOutputStreams) {
-			writer.println(message);
-			writer.flush();
 		}
 	}
 }
