@@ -42,13 +42,13 @@ public class ClientMain {
 
 		}
 	}
-	
-	public ClientMain() throws Exception{
+
+	public ClientMain() throws Exception {
 		ChatClient chat = new ChatClient();
 		chat.initView();
 		chat.setUpNetworking();
 	}
-	
+
 	public class ChatClient {
 		private void setUpNetworking() throws Exception {
 			@SuppressWarnings("resource")
@@ -72,27 +72,52 @@ public class ClientMain {
 			}
 
 		}
-		
+
 		private void initView() {
-			JFrame frame = new JFrame("Ludicrously Simple Chat Client");
+			JFrame frame = new JFrame("Chat Client");
+			JFrame logframe = new JFrame("Login");
 			frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			JPanel mainPanel = new JPanel();
-			incoming = new JTextArea(15, 50); 
+			JPanel logPanel = new JPanel();
+			incoming = new JTextArea(15, 50);
 			incoming.setLineWrap(true);
 			incoming.setWrapStyleWord(true);
 			incoming.setEditable(false);
 			outgoing = new JTextField(20);
 			JButton sendButton = new JButton("Send");
 			sendButton.addActionListener(new SendButtonListener());
+			outgoing.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					writer.println(outgoing.getText());
+					writer.flush();
+					outgoing.setText("");
+					outgoing.requestFocus();
+				}
+			});
 			JScrollPane qScroller = new JScrollPane(incoming);
 			qScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 			qScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+			JTextField username = new JTextField(20);
+			JButton logButton = new JButton("Login");
+			logButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					writer.println(username.getText());
+					writer.flush();
+					logframe.setVisible(false);
+					frame.setVisible(true);
+				}
+			});
 			mainPanel.add(qScroller);
-			mainPanel.add(outgoing); 
 			mainPanel.add(sendButton);
-			frame.getContentPane().add(BorderLayout.CENTER, mainPanel); 
-			frame.setSize(650, 500); 
-			frame.setVisible(true);
+			mainPanel.add(outgoing);
+			logPanel.add(username);
+			logPanel.add(logButton);
+			frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
+			frame.setSize(650, 500);
+			frame.setVisible(false);
+			logframe.getContentPane().add(BorderLayout.CENTER, logPanel);
+			logframe.setSize(650, 500);
+			logframe.setVisible(true);
 		}
 
 		class SendButtonListener implements ActionListener {

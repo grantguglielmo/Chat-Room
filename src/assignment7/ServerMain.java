@@ -11,6 +11,7 @@
  */
 package assignment7;
 
+import java.awt.BorderLayout;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,18 +19,47 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.WindowConstants;
 
 public class ServerMain {
 
 	private ArrayList<PrintWriter> clientOutputStreams;
+	private JTextArea output;
 
 	public static void main(String[] args) {
 		try {
+			@SuppressWarnings("unused")
 			ServerMain server = new ServerMain();
-			server.setUpNetworking();
 		} catch (IOException e) {
 
 		}
+	}
+
+	public ServerMain() throws IOException {
+		serverInit();
+		setUpNetworking();
+	}
+
+	public void serverInit() {
+		JFrame frame = new JFrame("Server");
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		JPanel mainPanel = new JPanel();
+		output = new JTextArea(15, 50);
+		output.setLineWrap(true);
+		output.setWrapStyleWord(true);
+		output.setEditable(false);
+		JScrollPane qScroller = new JScrollPane(output);
+		qScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		qScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+		mainPanel.add(qScroller);
+		frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
+		frame.setSize(650, 500);
+		frame.setVisible(true);
 	}
 
 	private void setUpNetworking() throws IOException {
@@ -42,7 +72,7 @@ public class ServerMain {
 			Thread t = new Thread(new ClientHandler(clientSocket));
 			t.start();
 			clientOutputStreams.add(writer);
-			System.out.println("got a connection");
+			output.append("got a connection\n");
 		}
 	}
 
@@ -56,12 +86,17 @@ public class ServerMain {
 
 		public void run() {
 			String message;
+			String user;
 			try {
+				user = reader.readLine();
+				output.append(user + " has connected \n");
+				user += ": ";
 				while ((message = reader.readLine()) != null) {
-					notifyClients(message);
+					output.append(user + message + "\n");
+					notifyClients(user + message);
 				}
 			} catch (IOException e) {
-				
+
 			}
 		}
 	}
