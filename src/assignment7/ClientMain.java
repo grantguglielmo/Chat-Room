@@ -14,6 +14,8 @@ package assignment7;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,6 +37,9 @@ public class ClientMain {
 	private JTextField outgoing;
 	private JFrame frame;
 	private JFrame logframe;
+	private String userName;
+	private String lastMsg;
+	private Socket sock;
 
 	public static void main(String[] args) {
 		try {
@@ -53,8 +58,7 @@ public class ClientMain {
 
 	public class ChatClient {
 		private void setUpNetworking() throws Exception {
-			@SuppressWarnings("resource")
-			Socket sock = new Socket("127.0.0.1", 8000);
+			sock = new Socket("127.0.0.1", 8000);
 			InputStreamReader streamReader = new InputStreamReader(sock.getInputStream());
 			reader = new BufferedReader(streamReader);
 			writer = new PrintWriter(sock.getOutputStream());
@@ -70,6 +74,7 @@ public class ClientMain {
 					do {
 						chk = reader.readLine();
 					} while (chk.equals("F"));
+					userName = lastMsg;
 					logframe.setVisible(false);
 					frame.setLocation(logframe.getX(), logframe.getY());
 					frame.setVisible(true);
@@ -77,7 +82,13 @@ public class ClientMain {
 				}
 				try {
 					while ((message = reader.readLine()) != null) {
-						incoming.append(message + "\n");
+						if(message.equals("exit")){
+							System.exit(1);
+						}
+						else if(message.equals("msg")){
+							message = reader.readLine();
+							incoming.append(message + "\n");
+						}
 					}
 				} catch (IOException e) {
 				}
@@ -88,7 +99,13 @@ public class ClientMain {
 		private void initView() {
 			frame = new JFrame("Chat Client");
 			logframe = new JFrame("Login");
-			frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+			frame.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					writer.println("exit");
+					writer.flush();
+				}
+			});
+			logframe.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			JPanel mainPanel = new JPanel();
 			JPanel logPanel = new JPanel();
 			incoming = new JTextArea(15, 50);
@@ -100,7 +117,10 @@ public class ClientMain {
 			sendButton.addActionListener(new SendButtonListener());
 			outgoing.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					writer.println(outgoing.getText());
+					lastMsg = outgoing.getText();
+					writer.println("msg");
+					writer.flush();
+					writer.println(lastMsg);
 					writer.flush();
 					outgoing.setText("");
 					outgoing.requestFocus();
@@ -113,7 +133,8 @@ public class ClientMain {
 			JButton logButton = new JButton("Login");
 			logButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					writer.println(username.getText());
+					lastMsg = username.getText();
+					writer.println(lastMsg);
 					writer.flush();
 				}
 			});
@@ -132,7 +153,10 @@ public class ClientMain {
 
 		class SendButtonListener implements ActionListener {
 			public void actionPerformed(ActionEvent ev) {
-				writer.println(outgoing.getText());
+				lastMsg = outgoing.getText();
+				writer.println("msg");
+				writer.flush();
+				writer.println(lastMsg);
 				writer.flush();
 				outgoing.setText("");
 				outgoing.requestFocus();

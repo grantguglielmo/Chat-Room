@@ -12,6 +12,8 @@
 package assignment7;
 
 import java.awt.BorderLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,12 +26,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.WindowConstants;
 
 public class ServerMain extends Observable {
 
-	private ArrayList<String> users;
 	private JTextArea output;
+	private ArrayList<String> online = new ArrayList<String>();
 
 	public static void main(String[] args) {
 		try {
@@ -46,9 +47,15 @@ public class ServerMain extends Observable {
 	}
 
 	public void serverInit() {
-		users = new ArrayList<String>();
 		JFrame frame = new JFrame("Server");
-		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				for(String u : online){
+					Users.mark(u, "OFF");
+				}
+				System.exit(1);
+			}
+		});
 		JPanel mainPanel = new JPanel();
 		output = new JTextArea(15, 50);
 		output.setLineWrap(true);
@@ -81,11 +88,12 @@ public class ServerMain extends Observable {
 		private BufferedReader reader;
 		private ClientObserver writer;
 		private String IP;
+		private Socket sock;
 
 		public ClientHandler(Socket clientSocket, ClientObserver w, String address) throws IOException {
 			IP = address;
 			writer = w;
-			Socket sock = clientSocket;
+			sock = clientSocket;
 			reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 		}
 
@@ -94,21 +102,35 @@ public class ServerMain extends Observable {
 			String user;
 			try {
 				user = reader.readLine();
-				while (users.contains(user)) {
+				while (Users.check(user)) {
+					if (!Users.checkStatus(user)) {
+						break;
+					}
 					writer.println("F");
 					writer.flush();
 					user = reader.readLine();
 				}
-				users.add(user);
+				Users.add(user);
+				online.add(user);
 				writer.println("K");
 				writer.flush();
 				output.append(user + " has connected from: " + IP + "\n");
-				user += ": ";
 				addObserver(writer);
 				while ((message = reader.readLine()) != null) {
-					output.append(user + message + "\n");
-					setChanged();
-					notifyObservers(user + message);
+					if (message.equals("exit")) {
+						Users.mark(user, "OFF");
+						online.remove(user);
+						writer.println("exit");
+						writer.flush();
+						output.append(user + " has disconnected\n");
+					} else if (message.equals("msg")) {
+						setChanged();
+						notifyObservers("msg");
+						message = reader.readLine();
+						output.append(user +": " + message + "\n");
+						setChanged();
+						notifyObservers(user +": " + message);
+					}
 				}
 			} catch (IOException e) {
 

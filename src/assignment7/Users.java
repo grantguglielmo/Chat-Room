@@ -1,0 +1,95 @@
+package assignment7;
+
+import java.io.*;
+
+public class Users {
+
+	public static boolean checkStatus(String user) {
+		String line;
+		try {
+			FileReader fileReader = new FileReader("Users.txt");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			while ((line = bufferedReader.readLine()) != null) {
+				if (line.equals(user)) {
+					line = bufferedReader.readLine();
+					if (line.equals("OFF")) {
+						bufferedReader.close();
+						return false;
+					}
+					bufferedReader.close();
+					return true;
+				}
+				line = bufferedReader.readLine();
+			}
+			bufferedReader.close();
+			return false;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public static boolean check(String user) {
+		String line;
+		try {
+			FileReader fileReader = new FileReader("Users.txt");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			while ((line = bufferedReader.readLine()) != null) {
+				if (line.equals(user)) {
+					bufferedReader.close();
+					return true;
+				}
+				line = bufferedReader.readLine();
+			}
+			bufferedReader.close();
+			return false;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public static void mark(String user, String stat) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("Users.txt"));
+			BufferedWriter bw = new BufferedWriter(new FileWriter("Users_temp.txt"));
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (line.equals(user)) {
+					bw.write(line + "\n");
+					line = br.readLine();
+					bw.write(stat + "\n");
+				} else {
+					bw.write(line + "\n");
+					line = br.readLine();
+					bw.write(line + "\n");
+				}
+			}
+			br.close();
+			bw.close();
+			File oldFile = new File("Users.txt");
+			oldFile.delete();
+			File newFile = new File("Users_temp.txt");
+			newFile.renameTo(oldFile);
+		} catch (Exception e) {
+
+		}
+	}
+
+	public static void add(String user) {
+		if (check(user)) {
+			mark(user, "ON");
+		} else {
+			try {
+				FileWriter file = new FileWriter("Users.txt", true);
+				BufferedWriter bw = new BufferedWriter(file);
+				bw.write(user);
+				bw.newLine();
+				bw.write("ON");
+				bw.newLine();
+				bw.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+}
