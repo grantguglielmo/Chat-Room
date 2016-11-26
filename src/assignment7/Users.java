@@ -12,6 +12,7 @@ public class Users {
 			while ((line = bufferedReader.readLine()) != null) {
 				if (line.equals(user)) {
 					line = bufferedReader.readLine();
+					line = bufferedReader.readLine();
 					if (line.equals("OFF")) {
 						bufferedReader.close();
 						return false;
@@ -19,6 +20,7 @@ public class Users {
 					bufferedReader.close();
 					return true;
 				}
+				line = bufferedReader.readLine();
 				line = bufferedReader.readLine();
 			}
 			bufferedReader.close();
@@ -35,8 +37,34 @@ public class Users {
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			while ((line = bufferedReader.readLine()) != null) {
 				if (line.equals(user)) {
+					line = bufferedReader.readLine();
 					bufferedReader.close();
 					return true;
+				}
+				line = bufferedReader.readLine();
+				line = bufferedReader.readLine();
+			}
+			bufferedReader.close();
+			return false;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public static boolean checkP(String user, String pass) {
+		String line;
+		try {
+			FileReader fileReader = new FileReader("Users.txt");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			while ((line = bufferedReader.readLine()) != null) {
+				if (line.equals(user)) {
+					line = bufferedReader.readLine();
+					if (line.equals(pass)) {
+						bufferedReader.close();
+						return true;
+					}
+				} else {
+					line = bufferedReader.readLine();
 				}
 				line = bufferedReader.readLine();
 			}
@@ -56,8 +84,12 @@ public class Users {
 				if (line.equals(user)) {
 					bw.write(line + "\n");
 					line = br.readLine();
+					bw.write(line + "\n");
+					line = br.readLine();
 					bw.write(stat + "\n");
 				} else {
+					bw.write(line + "\n");
+					line = br.readLine();
 					bw.write(line + "\n");
 					line = br.readLine();
 					bw.write(line + "\n");
@@ -74,7 +106,7 @@ public class Users {
 		}
 	}
 
-	public static void add(String user) {
+	public static void add(String user, String pass) {
 		if (check(user)) {
 			mark(user, "ON");
 		} else {
@@ -82,6 +114,8 @@ public class Users {
 				FileWriter file = new FileWriter("Users.txt", true);
 				BufferedWriter bw = new BufferedWriter(file);
 				bw.write(user);
+				bw.newLine();
+				bw.write(pass);
 				bw.newLine();
 				bw.write("ON");
 				bw.newLine();

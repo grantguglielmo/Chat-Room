@@ -21,9 +21,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+
+import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -40,6 +44,7 @@ public class ClientMain {
 	private String userName;
 	private String lastMsg;
 	private Socket sock;
+	private JLabel labelE;
 
 	public static void main(String[] args) {
 		try {
@@ -73,7 +78,8 @@ public class ClientMain {
 				try {
 					do {
 						chk = reader.readLine();
-					} while (chk.equals("F"));
+						labelE.setText(chk);
+					} while (!chk.equals("K"));
 					userName = lastMsg;
 					logframe.setVisible(false);
 					frame.setLocation(logframe.getX(), logframe.getY());
@@ -82,12 +88,15 @@ public class ClientMain {
 				}
 				try {
 					while ((message = reader.readLine()) != null) {
-						if(message.equals("exit")){
+						if (message.equals("exit")) {
 							System.exit(1);
-						}
-						else if(message.equals("msg")){
+						} else if (message.equals("msg")) {
 							message = reader.readLine();
-							incoming.append(message + "\n");
+							if (message.contains(userName)) {
+								incoming.append(message + "\n");
+							} else {
+								incoming.append(message + "\n");
+							}
 						}
 					}
 				} catch (IOException e) {
@@ -108,6 +117,8 @@ public class ClientMain {
 			logframe.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			JPanel mainPanel = new JPanel();
 			JPanel logPanel = new JPanel();
+			GroupLayout layout = new GroupLayout(logPanel);
+			logPanel.setLayout(layout);
 			incoming = new JTextArea(15, 50);
 			incoming.setLineWrap(true);
 			incoming.setWrapStyleWord(true);
@@ -130,19 +141,37 @@ public class ClientMain {
 			qScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 			qScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 			JTextField username = new JTextField(20);
+			JPasswordField password = new JPasswordField(20);
+			username.setMaximumSize(username.getPreferredSize());
+			password.setMaximumSize(password.getPreferredSize());
+			JLabel labelU = new JLabel("Username:");
+			JLabel labelP = new JLabel("Password:");
+			labelE = new JLabel("");
 			JButton logButton = new JButton("Login");
 			logButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					lastMsg = username.getText();
 					writer.println(lastMsg);
 					writer.flush();
+					writer.println(password.getPassword());
+					writer.flush();
 				}
 			});
 			mainPanel.add(qScroller);
 			mainPanel.add(outgoing);
 			mainPanel.add(sendButton);
-			logPanel.add(username);
-			logPanel.add(logButton);
+			layout.setHorizontalGroup(layout.createSequentialGroup()
+					.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(labelU)
+							.addComponent(labelP))
+					.addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(username)
+							.addComponent(password).addComponent(logButton).addComponent(labelE)));
+			layout.setVerticalGroup(layout.createSequentialGroup()
+					.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelU)
+							.addComponent(username))
+					.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelP)
+							.addComponent(password))
+					.addComponent(logButton).addComponent(labelE));
+
 			frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
 			frame.setSize(650, 500);
 			frame.setVisible(false);

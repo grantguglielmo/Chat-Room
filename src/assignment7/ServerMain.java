@@ -50,7 +50,7 @@ public class ServerMain extends Observable {
 		JFrame frame = new JFrame("Server");
 		frame.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				for(String u : online){
+				for (String u : online) {
 					Users.mark(u, "OFF");
 				}
 				System.exit(1);
@@ -100,17 +100,26 @@ public class ServerMain extends Observable {
 		public void run() {
 			String message;
 			String user;
+			String pass;
 			try {
 				user = reader.readLine();
+				pass = reader.readLine();
 				while (Users.check(user)) {
-					if (!Users.checkStatus(user)) {
-						break;
+					if (Users.checkP(user, pass)) {
+						if (!Users.checkStatus(user)) {
+							break;
+						} else {
+							writer.println("User Already Online");
+							writer.flush();
+						}
+					} else {
+						writer.println("Incorrect Password");
+						writer.flush();
 					}
-					writer.println("F");
-					writer.flush();
 					user = reader.readLine();
+					pass = reader.readLine();
 				}
-				Users.add(user);
+				Users.add(user, pass);
 				online.add(user);
 				writer.println("K");
 				writer.flush();
@@ -127,9 +136,9 @@ public class ServerMain extends Observable {
 						setChanged();
 						notifyObservers("msg");
 						message = reader.readLine();
-						output.append(user +": " + message + "\n");
+						output.append(user + ": " + message + "\n");
 						setChanged();
-						notifyObservers(user +": " + message);
+						notifyObservers(user + ": " + message);
 					}
 				}
 			} catch (IOException e) {
