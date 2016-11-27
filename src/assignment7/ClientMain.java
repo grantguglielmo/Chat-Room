@@ -21,14 +21,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
@@ -45,6 +49,12 @@ public class ClientMain {
 	private String lastMsg;
 	private Socket sock;
 	private JLabel labelE;
+	private JTabbedPane tabs;
+	private JComboBox<String> box;
+	private JLabel friendErr;
+	private ArrayList<String> friends = new ArrayList<String>();
+	private ArrayList<String> pchats = new ArrayList<String>();
+	private HashMap<String, JTextArea> privateChats = new HashMap<String, JTextArea>();
 
 	public static void main(String[] args) {
 		try {
@@ -59,6 +69,7 @@ public class ClientMain {
 		ChatClient chat = new ChatClient();
 		chat.initView();
 		chat.setUpNetworking();
+		chat.frinit();
 	}
 
 	public class ChatClient {
@@ -83,19 +94,51 @@ public class ClientMain {
 					userName = lastMsg;
 					logframe.setVisible(false);
 					frame.setLocation(logframe.getX(), logframe.getY());
+					logframe.dispose();
 					frame.setVisible(true);
+					while (!(message = reader.readLine()).equals("dumped")) {
+						incoming.append(message + "\n");
+					}
 				} catch (IOException e1) {
 				}
 				try {
 					while ((message = reader.readLine()) != null) {
 						if (message.equals("exit")) {
 							System.exit(1);
-						} else if (message.equals("msg")) {
+						} 
+						else if(message.equals("private")){
+							message = reader.readLine();
+							JTextArea textbox = privateChats.get(message);
+							message = reader.readLine();
+							textbox.append(message + "\n");
+						}
+						else if(message.equals("strt_private")){
+							message = reader.readLine();
+							if(!friends.contains(message)){
+								friends.add(message);
+							}
+							pchats.add(message);
+							newChat(message);
+						}
+						else if (message.equals("msg")) {
 							message = reader.readLine();
 							if (message.contains(userName)) {
 								incoming.append(message + "\n");
 							} else {
 								incoming.append(message + "\n");
+							}
+						} else if (message.equals("invite")) {
+							message = reader.readLine();
+							if (message.equals("F")) {
+								message = reader.readLine();
+								friendErr.setText(message);
+							} else if (message.equals("accept")) {
+								message = reader.readLine();
+								box.addItem(message);
+								friends.add(message);
+							} else if (message.equals("recieved")) {
+								message = reader.readLine();
+								inviteR(message);
 							}
 						}
 					}
@@ -103,6 +146,82 @@ public class ClientMain {
 				}
 			}
 
+		}
+		
+		public void newChat(String person){
+			JPanel pchat = new JPanel();
+			JTextArea chat = new JTextArea(15, 50);
+			chat.setName(person);
+			chat.setLineWrap(true);
+			chat.setWrapStyleWord(true);
+			chat.setEditable(false);
+			JButton sendButton = new JButton("Send");
+			JScrollPane qScroller = new JScrollPane(chat);
+			qScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+			qScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+			JTextField field = new JTextField(20);
+			pchat.add(qScroller);
+			pchat.add(field);
+			pchat.add(sendButton);
+			sendButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					writer.println("private");
+					writer.flush();
+					writer.println(chat.getName());
+					writer.flush();
+					writer.println(field.getText());
+					writer.flush();
+					field.setText("");
+					field.requestFocus();
+				}
+			});
+			tabs.add(person, pchat);
+			privateChats.put(person, chat);
+		}
+
+		public void inviteR(String sender) {
+			JFrame YN = new JFrame();
+			JPanel pane = new JPanel();
+			JLabel send = new JLabel(sender + " sent you a friend request.");
+			JButton Y = new JButton("accept");
+			JButton N = new JButton("decline");
+			pane.add(send);
+			pane.add(Y);
+			pane.add(N);
+			YN.getContentPane().add(BorderLayout.CENTER, pane);
+			YN.setSize(300, 200);
+			YN.setVisible(true);
+			YN.setLocation(frame.getX(), frame.getY());
+			Y.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					box.addItem(sender);
+					friends.add(sender);
+					writer.println("accept");
+					writer.flush();
+					writer.println(sender);
+					writer.flush();
+					YN.setVisible(false);
+					YN.dispose();
+				}
+			});
+			N.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					writer.println("decline");
+					writer.flush();
+					writer.println(sender);
+					writer.flush();
+					YN.setVisible(false);
+					YN.dispose();
+				}
+			});
+			YN.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					writer.println("decline");
+					writer.flush();
+					writer.println(sender);
+					writer.flush();
+				}
+			});
 		}
 
 		private void initView() {
@@ -171,13 +290,55 @@ public class ClientMain {
 					.addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelP)
 							.addComponent(password))
 					.addComponent(logButton).addComponent(labelE));
-
-			frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
+			tabs = new JTabbedPane();
+			tabs.addTab("Lobby", mainPanel);
+			frame.getContentPane().add(BorderLayout.CENTER, tabs);
 			frame.setSize(650, 500);
 			frame.setVisible(false);
 			logframe.getContentPane().add(BorderLayout.CENTER, logPanel);
 			logframe.setSize(650, 500);
 			logframe.setVisible(true);
+		}
+
+		public void frinit() {
+			JPanel mainPanel = new JPanel();
+			box = new JComboBox<String>();
+			JButton chat = new JButton("Start Chat");
+			JTextField friendB = new JTextField(20);
+			JButton invite = new JButton("Add Friend");
+			friendErr = new JLabel("");
+			mainPanel.add(box);
+			mainPanel.add(chat);
+			mainPanel.add(friendB);
+			mainPanel.add(invite);
+			mainPanel.add(friendErr);
+			tabs.addTab("Friends", mainPanel);
+			invite.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					if (friends.contains(friendB.getText())) {
+						friendErr.setText("Already Friends");
+					} else {
+						writer.println("invite");
+						writer.flush();
+						writer.println(friendB.getText());
+						writer.flush();
+						friendErr.setText("Invite Sent");
+					}
+					friendB.setText("");
+				}
+			});
+			chat.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					if (box.getSelectedItem() == null || box.getSelectedItem().equals("")) {
+						friendErr.setText("Select A Friend");
+					} else {
+						writer.println("strt_private");
+						writer.flush();
+						writer.println(box.getSelectedItem());
+						writer.flush();
+					}
+				}
+			});
 		}
 
 		class SendButtonListener implements ActionListener {

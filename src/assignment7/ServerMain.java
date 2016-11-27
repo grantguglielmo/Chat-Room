@@ -15,11 +15,15 @@ import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Observable;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -31,6 +35,9 @@ public class ServerMain extends Observable {
 
 	private JTextArea output;
 	private ArrayList<String> online = new ArrayList<String>();
+	private HashMap<String, ClientObserver> map = new HashMap<String, ClientObserver>();
+	private HashMap<String, ArrayList<String>> pending = new HashMap<String, ArrayList<String>>();
+	private BufferedWriter bw;
 
 	public static void main(String[] args) {
 		try {
@@ -53,6 +60,14 @@ public class ServerMain extends Observable {
 				for (String u : online) {
 					Users.mark(u, "OFF");
 				}
+				try {
+					bw.close();
+					BufferedWriter end = new BufferedWriter(new FileWriter("history.txt"));
+					end.write("");
+					end.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 				System.exit(1);
 			}
 		});
@@ -68,6 +83,11 @@ public class ServerMain extends Observable {
 		frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
 		frame.setSize(650, 500);
 		frame.setVisible(true);
+		try {
+			bw = new BufferedWriter(new FileWriter("history.txt", true));
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	private void setUpNetworking() throws IOException {
@@ -104,8 +124,8 @@ public class ServerMain extends Observable {
 			try {
 				user = reader.readLine();
 				pass = reader.readLine();
-				while (Users.check(user)) {
-					if (Users.checkP(user, pass)) {
+				while (Users.check(user) || user.equals("")) {
+					if (pass.equals(null) || pass.equals("") || Users.checkP(user, pass)) {
 						if (!Users.checkStatus(user)) {
 							break;
 						} else {
@@ -121,10 +141,21 @@ public class ServerMain extends Observable {
 				}
 				Users.add(user, pass);
 				online.add(user);
+				map.put(user, writer);
+				pending.put(user, new ArrayList<String>());
 				writer.println("K");
 				writer.flush();
 				output.append(user + " has connected from: " + IP + "\n");
 				addObserver(writer);
+				String line;
+				BufferedReader br = new BufferedReader(new FileReader("history.txt"));
+				while ((line = br.readLine()) != null) {
+					writer.println(line);
+					writer.flush();
+				}
+				writer.println("dumped");
+				writer.flush();
+				br.close();
 				while ((message = reader.readLine()) != null) {
 					if (message.equals("exit")) {
 						Users.mark(user, "OFF");
@@ -132,13 +163,115 @@ public class ServerMain extends Observable {
 						writer.println("exit");
 						writer.flush();
 						output.append(user + " has disconnected\n");
-					} else if (message.equals("msg")) {
+					} 
+					else if(message.equals("private")){
+						message = reader.readLine();
+						String other = message;
+						ClientObserver f = map.get(message);
+						message = reader.readLine();
+						writer.println("private");
+						writer.flush();
+						writer.println(other);
+						writer.flush();
+						writer.println(user + ": " + message);
+						writer.flush();
+						f.println("private");
+						f.flush();
+						f.println(user);
+						f.flush();
+						f.println(user + ": " + message);
+						f.flush();
+						output.append(user + " @ " + other + ": " + message + "\n");
+					}
+					else if(message.equals("strt_private")){
+						message = reader.readLine();
+						if (!Users.checkStatus(message)) {
+							writer.println("invite");
+							writer.flush();
+							writer.println("F");
+							writer.flush();
+							writer.println("User Offline");
+							writer.flush();
+						} else{
+							ClientObserver f = map.get(message);
+							writer.println("strt_private");
+							writer.flush();
+							writer.println(message);
+							writer.flush();
+							f.println("strt_private");
+							f.flush();
+							f.println(user);
+							f.flush();
+						}
+					}else if (message.equals("msg")) {
+					
 						setChanged();
 						notifyObservers("msg");
 						message = reader.readLine();
-						output.append(user + ": " + message + "\n");
+						output.append(user + " @ Lobby: " + message + "\n");
 						setChanged();
 						notifyObservers(user + ": " + message);
+						bw.write(user + ": " + message + "\n");
+						bw.flush();
+					} else if (message.equals("accept")) {
+						message = reader.readLine();
+						ArrayList<String> p = pending.get(user);
+						p.remove(message);
+						p = pending.get(message);
+						p.remove(user);
+						ClientObserver f = map.get(message);
+						f.println("invite");
+						f.flush();
+						f.println("accept");
+						f.flush();
+						f.println(user);
+						f.flush();
+						output.append(user + " <3 " + message + "\n");
+					} else if (message.equals("decline")) {
+						message = reader.readLine();
+					} else if (message.equals("invite")) {
+						message = reader.readLine();
+						if (!Users.check(message)) {
+							writer.println("invite");
+							writer.flush();
+							writer.println("F");
+							writer.flush();
+							writer.println("No Such User");
+							writer.flush();
+						} else if (!Users.checkStatus(message)) {
+							writer.println("invite");
+							writer.flush();
+							writer.println("F");
+							writer.flush();
+							writer.println("User Offline");
+							writer.flush();
+						} else if (pending.get(user).contains(message)) {
+							writer.println("invite");
+							writer.flush();
+							writer.println("F");
+							writer.flush();
+							writer.println("Invite Pending");
+							writer.flush();
+						} else if (message.equals(user)) {
+							writer.println("invite");
+							writer.flush();
+							writer.println("F");
+							writer.flush();
+							writer.println("Are You Lonely");
+							writer.flush();
+						} else {
+							ArrayList<String> p = pending.get(user);
+							p.add(message);
+							p = pending.get(message);
+							p.add(user);
+							ClientObserver f = map.get(message);
+							f.println("invite");
+							f.flush();
+							f.println("recieved");
+							f.flush();
+							f.println(user);
+							f.flush();
+						}
 					}
 				}
 			} catch (IOException e) {
