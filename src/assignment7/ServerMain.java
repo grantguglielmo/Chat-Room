@@ -36,8 +36,10 @@ public class ServerMain extends Observable {
 	private JTextArea output;
 	private ArrayList<String> online = new ArrayList<String>();
 	private HashMap<String, ClientObserver> map = new HashMap<String, ClientObserver>();
+	private HashMap<String, ArrayList<ClientObserver>> Gmap = new HashMap<String, ArrayList<ClientObserver>>();
 	private HashMap<String, ArrayList<String>> pending = new HashMap<String, ArrayList<String>>();
 	private BufferedWriter bw;
+	private int groupnum = 1;
 
 	public static void main(String[] args) {
 		try {
@@ -121,6 +123,7 @@ public class ServerMain extends Observable {
 			String message;
 			String user;
 			String pass;
+
 			try {
 				user = reader.readLine();
 				pass = reader.readLine();
@@ -163,10 +166,17 @@ public class ServerMain extends Observable {
 						writer.println("exit");
 						writer.flush();
 						output.append(user + " has disconnected\n");
-					} 
-					else if(message.equals("private")){
+					} else if (message.equals("private")) {
 						message = reader.readLine();
 						String other = message;
+						if (!Users.checkStatus(message)) {
+							writer.println("private");
+							writer.flush();
+							writer.println(message);
+							writer.flush();
+							writer.println(message + " is Offline");
+							writer.flush();
+						}
 						ClientObserver f = map.get(message);
 						message = reader.readLine();
 						writer.println("private");
@@ -182,8 +192,7 @@ public class ServerMain extends Observable {
 						f.println(user + ": " + message);
 						f.flush();
 						output.append(user + " @ " + other + ": " + message + "\n");
-					}
-					else if(message.equals("strt_private")){
+					} else if (message.equals("strt_private")) {
 						message = reader.readLine();
 						if (!Users.checkStatus(message)) {
 							writer.println("invite");
@@ -192,7 +201,7 @@ public class ServerMain extends Observable {
 							writer.flush();
 							writer.println("User Offline");
 							writer.flush();
-						} else{
+						} else {
 							ClientObserver f = map.get(message);
 							writer.println("strt_private");
 							writer.flush();
@@ -203,8 +212,68 @@ public class ServerMain extends Observable {
 							f.println(user);
 							f.flush();
 						}
-					}else if (message.equals("msg")) {
-					
+					} else if (message.equals("strt_group")) {
+						writer.println("new_group");
+						writer.flush();
+						writer.println("Group " + groupnum);
+						writer.flush();
+						ArrayList<ClientObserver> newG = new ArrayList<ClientObserver>();
+						newG.add(writer);
+						Gmap.put("Group " + groupnum, newG);
+						groupnum++;
+					} else if (message.equals("add_mem")) {
+						message = reader.readLine();
+						String g = message;
+						ArrayList<ClientObserver> groupLis = Gmap.get(message);
+						message = reader.readLine();
+						if (!Users.checkStatus(message)) {
+							writer.println("group");
+							writer.flush();
+							writer.println(g);
+							writer.flush();
+							writer.println(message + " is offline");
+							writer.flush();
+						} else if (groupLis.contains(map.get(message))) {
+							writer.println("group");
+							writer.flush();
+							writer.println(g);
+							writer.flush();
+							writer.println(message + " is already in the group");
+							writer.flush();
+						} else {
+							groupLis.add(map.get(message));
+							map.get(message).println("new_group");
+							map.get(message).flush();
+							map.get(message).println(g);
+							map.get(message).flush();
+							for (ClientObserver o : groupLis) {
+								o.println("group");
+								o.flush();
+								o.println(g);
+								o.flush();
+								o.println(message + " has joined");
+								o.flush();
+							}
+						}
+					} else if (message.equals("group")) {
+						message = reader.readLine();
+						String g = message;
+						ArrayList<ClientObserver> groupLis = Gmap.get(g);
+						message = reader.readLine();
+						for (ClientObserver o : groupLis) {
+							o.println("group");
+							o.flush();
+							o.println(g);
+							o.flush();
+							o.println(user + ": " + message);
+							o.flush();
+						}
+						output.append(user + " @ " + g + ": " + message + "\n");
+					} else if (message.equals("password")) {
+						message = reader.readLine();
+						Users.pass(user, message);
+					} else if (message.equals("msg")) {
+
 						setChanged();
 						notifyObservers("msg");
 						message = reader.readLine();

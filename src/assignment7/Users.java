@@ -1,3 +1,14 @@
+/* CHAT ROOM User.java
+ * EE422C Project 7 submission by
+ * Grant Guglielmo
+ * gg25488
+ * 16470
+ * Mohit Joshi
+ * msj696
+ * 16475
+ * Slip days used: 0
+ * Fall 2016
+ */
 package assignment7;
 
 import java.io.*;
@@ -87,6 +98,37 @@ public class Users {
 					bw.write(line + "\n");
 					line = br.readLine();
 					bw.write(stat + "\n");
+				} else {
+					bw.write(line + "\n");
+					line = br.readLine();
+					bw.write(line + "\n");
+					line = br.readLine();
+					bw.write(line + "\n");
+				}
+			}
+			br.close();
+			bw.close();
+			File oldFile = new File("Users.txt");
+			oldFile.delete();
+			File newFile = new File("Users_temp.txt");
+			newFile.renameTo(oldFile);
+		} catch (Exception e) {
+
+		}
+	}
+	
+	public static void pass(String user, String password) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("Users.txt"));
+			BufferedWriter bw = new BufferedWriter(new FileWriter("Users_temp.txt"));
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (line.equals(user)) {
+					bw.write(line + "\n");
+					line = br.readLine();
+					bw.write(password + "\n");
+					line = br.readLine();
+					bw.write(line + "\n");
 				} else {
 					bw.write(line + "\n");
 					line = br.readLine();
