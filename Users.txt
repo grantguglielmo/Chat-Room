@@ -7,6 +7,3 @@ OFF
 grant
 g
 OFF
-No, you don't have to change the args[] inside Driver.java. args[] is an array that holds all of the command line arguments passed to your program, you can initilize these before running the program. Assuming you are using eclipse to debug your program, if you go to the Run tab then to Run Configurations... and click on the Arguments tab, you can enter your command line arguments. Enter the number of classes, the total number of hours and the max grade all seperated by spaces.
-
-How do we get our program to run without altering the Driver.java? Do we have to manually initilize the args[] array?

@@ -77,7 +77,7 @@ public class ClientMain {
 
 	public class ChatClient {
 		private void setUpNetworking() throws Exception {
-			InetAddress ip = InetAddress.getByName("10.164.3.250");
+			InetAddress ip = InetAddress.getByName("10.164.0.152");
 			sock = new Socket(ip, 8000);
 			InputStreamReader streamReader = new InputStreamReader(sock.getInputStream());
 			reader = new BufferedReader(streamReader);
