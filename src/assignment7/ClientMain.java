@@ -367,7 +367,7 @@ public class ClientMain {
 			JLabel labelU = new JLabel("Username:");
 			JLabel labelP = new JLabel("Password:");
 			labelE = new JLabel("");
-			JButton logButton = new JButton("Login");
+			JButton logButton = new JButton("Login/Register");
 			username.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					logButton.doClick();
