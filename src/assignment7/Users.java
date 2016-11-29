@@ -14,8 +14,6 @@ package assignment7;
 import java.io.*;
 
 public class Users {
-	
-	public static Object lock = new Object();
 
 	public static boolean checkStatus(String user) {
 		String line;

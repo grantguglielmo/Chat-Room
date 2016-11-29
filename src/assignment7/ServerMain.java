@@ -94,7 +94,7 @@ public class ServerMain extends Observable {
 
 	private void setUpNetworking() throws IOException {
 		@SuppressWarnings("resource")
-		ServerSocket serverSock = new ServerSocket(8000);
+		ServerSocket serverSock = new ServerSocket(50001);
 		while (true) {
 			Socket clientSocket = serverSock.accept();
 			ClientObserver writer = new ClientObserver(clientSocket.getOutputStream());
@@ -163,71 +163,71 @@ public class ServerMain extends Observable {
 					if (message.equals("exit")) {
 						Users.mark(user, "OFF");
 						online.remove(user);
-						synchronized(output){
-						writer.println("exit");
-						writer.flush();
+						synchronized (output) {
+							writer.println("exit");
+							writer.flush();
 						}
 						output.append(user + " has disconnected\n");
 					} else if (message.equals("private")) {
 						message = reader.readLine();
 						String other = message;
 						if (!Users.checkStatus(message)) {
-							synchronized(output){
-							writer.println("private");
-							writer.flush();
-							writer.println(message);
-							writer.flush();
-							writer.println(message + " is Offline");
-							writer.flush();
+							synchronized (output) {
+								writer.println("private");
+								writer.flush();
+								writer.println(message);
+								writer.flush();
+								writer.println(message + " is Offline");
+								writer.flush();
 							}
 						}
 						ClientObserver f = map.get(message);
 						message = reader.readLine();
-						synchronized(output){
-						writer.println("private");
-						writer.flush();
-						writer.println(other);
-						writer.flush();
-						writer.println(user + ": " + message);
-						writer.flush();
-						f.println("private");
-						f.flush();
-						f.println(user);
-						f.flush();
-						f.println(user + ": " + message);
-						f.flush();
+						synchronized (output) {
+							writer.println("private");
+							writer.flush();
+							writer.println(other);
+							writer.flush();
+							writer.println(user + ": " + message);
+							writer.flush();
+							f.println("private");
+							f.flush();
+							f.println(user);
+							f.flush();
+							f.println(user + ": " + message);
+							f.flush();
 						}
 						output.append(user + " @ " + other + ": " + message + "\n");
 					} else if (message.equals("strt_private")) {
 						message = reader.readLine();
 						if (!Users.checkStatus(message)) {
-							synchronized(output){
-							writer.println("invite");
-							writer.flush();
-							writer.println("F");
-							writer.flush();
-							writer.println("User Offline");
-							writer.flush();
+							synchronized (output) {
+								writer.println("invite");
+								writer.flush();
+								writer.println("F");
+								writer.flush();
+								writer.println("User Offline");
+								writer.flush();
 							}
 						} else {
 							ClientObserver f = map.get(message);
-							synchronized(output){
-							writer.println("strt_private");
-							writer.flush();
-							writer.println(message);
-							writer.flush();
-							f.println("strt_private");
-							f.flush();
-							f.println(user);
-							f.flush();
+							synchronized (output) {
+								writer.println("strt_private");
+								writer.flush();
+								writer.println(message);
+								writer.flush();
+								f.println("strt_private");
+								f.flush();
+								f.println(user);
+								f.flush();
 							}
 						}
 					} else if (message.equals("strt_group")) {
-						synchronized(output){
-						writer.println("new_group");
-						writer.flush();
-						writer.println("Group " + groupnum);
-						writer.flush();
+						synchronized (output) {
+							writer.println("new_group");
+							writer.flush();
+							writer.println("Group " + groupnum);
+							writer.flush();
 						}
 						ArrayList<ClientObserver> newG = new ArrayList<ClientObserver>();
 						newG.add(writer);
@@ -239,39 +239,39 @@ public class ServerMain extends Observable {
 						ArrayList<ClientObserver> groupLis = Gmap.get(message);
 						message = reader.readLine();
 						if (!Users.checkStatus(message)) {
-							synchronized(output){
-							writer.println("group");
-							writer.flush();
-							writer.println(g);
-							writer.flush();
-							writer.println(message + " is offline");
-							writer.flush();
+							synchronized (output) {
+								writer.println("group");
+								writer.flush();
+								writer.println(g);
+								writer.flush();
+								writer.println(message + " is offline");
+								writer.flush();
 							}
 						} else if (groupLis.contains(map.get(message))) {
-							synchronized(output){
-							writer.println("group");
-							writer.flush();
-							writer.println(g);
-							writer.flush();
-							writer.println(message + " is already in the group");
-							writer.flush();
+							synchronized (output) {
+								writer.println("group");
+								writer.flush();
+								writer.println(g);
+								writer.flush();
+								writer.println(message + " is already in the group");
+								writer.flush();
 							}
 						} else {
 							groupLis.add(map.get(message));
-							synchronized(output){
-							map.get(message).println("new_group");
-							map.get(message).flush();
-							map.get(message).println(g);
-							map.get(message).flush();
+							synchronized (output) {
+								map.get(message).println("new_group");
+								map.get(message).flush();
+								map.get(message).println(g);
+								map.get(message).flush();
 							}
 							for (ClientObserver o : groupLis) {
-								synchronized(output){
-								o.println("group");
-								o.flush();
-								o.println(g);
-								o.flush();
-								o.println(message + " has joined");
-								o.flush();
+								synchronized (output) {
+									o.println("group");
+									o.flush();
+									o.println(g);
+									o.flush();
+									o.println(message + " has joined");
+									o.flush();
 								}
 							}
 						}
@@ -281,13 +281,13 @@ public class ServerMain extends Observable {
 						ArrayList<ClientObserver> groupLis = Gmap.get(g);
 						message = reader.readLine();
 						for (ClientObserver o : groupLis) {
-							synchronized(output){
-							o.println("group");
-							o.flush();
-							o.println(g);
-							o.flush();
-							o.println(user + ": " + message);
-							o.flush();
+							synchronized (output) {
+								o.println("group");
+								o.flush();
+								o.println(g);
+								o.flush();
+								o.println(user + ": " + message);
+								o.flush();
 							}
 						}
 						output.append(user + " @ " + g + ": " + message + "\n");
@@ -295,17 +295,17 @@ public class ServerMain extends Observable {
 						message = reader.readLine();
 						Users.pass(user, message);
 					} else if (message.equals("msg")) {
-						synchronized(output){
-						setChanged();
-						notifyObservers("msg");
+						synchronized (output) {
+							setChanged();
+							notifyObservers("msg");
 						}
 						message = reader.readLine();
 						output.append(user + " @ Lobby: " + message + "\n");
-						synchronized(output){
-						setChanged();
-						notifyObservers(user + ": " + message);
-						bw.write(user + ": " + message + "\n");
-						bw.flush();
+						synchronized (output) {
+							setChanged();
+							notifyObservers(user + ": " + message);
+							bw.write(user + ": " + message + "\n");
+							bw.flush();
 						}
 					} else if (message.equals("accept")) {
 						message = reader.readLine();
@@ -314,13 +314,13 @@ public class ServerMain extends Observable {
 						p = pending.get(message);
 						p.remove(user);
 						ClientObserver f = map.get(message);
-						synchronized(output){
-						f.println("invite");
-						f.flush();
-						f.println("accept");
-						f.flush();
-						f.println(user);
-						f.flush();
+						synchronized (output) {
+							f.println("invite");
+							f.flush();
+							f.println("accept");
+							f.flush();
+							f.println(user);
+							f.flush();
 						}
 						output.append(user + " <3 " + message + "\n");
 					} else if (message.equals("decline")) {
@@ -328,40 +328,40 @@ public class ServerMain extends Observable {
 					} else if (message.equals("invite")) {
 						message = reader.readLine();
 						if (!Users.check(message)) {
-							synchronized(output){
-							writer.println("invite");
-							writer.flush();
-							writer.println("F");
-							writer.flush();
-							writer.println("No Such User");
-							writer.flush();
+							synchronized (output) {
+								writer.println("invite");
+								writer.flush();
+								writer.println("F");
+								writer.flush();
+								writer.println("No Such User");
+								writer.flush();
 							}
 						} else if (!Users.checkStatus(message)) {
-							synchronized(output){
-							writer.println("invite");
-							writer.flush();
-							writer.println("F");
-							writer.flush();
-							writer.println("User Offline");
-							writer.flush();
+							synchronized (output) {
+								writer.println("invite");
+								writer.flush();
+								writer.println("F");
+								writer.flush();
+								writer.println("User Offline");
+								writer.flush();
 							}
 						} else if (pending.get(user).contains(message)) {
-							synchronized(output){
-							writer.println("invite");
-							writer.flush();
-							writer.println("F");
-							writer.flush();
-							writer.println("Invite Pending");
-							writer.flush();
+							synchronized (output) {
+								writer.println("invite");
+								writer.flush();
+								writer.println("F");
+								writer.flush();
+								writer.println("Invite Pending");
+								writer.flush();
 							}
 						} else if (message.equals(user)) {
-							synchronized(output){
-							writer.println("invite");
-							writer.flush();
-							writer.println("F");
-							writer.flush();
-							writer.println("Are You Lonely");
-							writer.flush();
+							synchronized (output) {
+								writer.println("invite");
+								writer.flush();
+								writer.println("F");
+								writer.flush();
+								writer.println("Are You Lonely");
+								writer.flush();
 							}
 						} else {
 							ArrayList<String> p = pending.get(user);
@@ -369,13 +369,13 @@ public class ServerMain extends Observable {
 							p = pending.get(message);
 							p.add(user);
 							ClientObserver f = map.get(message);
-							synchronized(output){
-							f.println("invite");
-							f.flush();
-							f.println("recieved");
-							f.flush();
-							f.println(user);
-							f.flush();
+							synchronized (output) {
+								f.println("invite");
+								f.flush();
+								f.println("recieved");
+								f.flush();
+								f.println(user);
+								f.flush();
 							}
 						}
 					}
